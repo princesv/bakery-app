@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Bakery App</string>
+    <string name="error_message">check network connection</string>
+</resources>
