@@ -1,10 +1,13 @@
 package com.prince.bakeryapp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.FrameLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -17,21 +20,89 @@ import java.util.List;
 public class RecipeActivity extends AppCompatActivity implements RecipeFragment.ListItemClickListener {
     final static String TAG_INGREDIENTS_DATA = "ingredients-data";
     final static String TAG_STEPS_DATA = "steps-data";
+    final static String RECIPE_TITLE = "recipe-title";
     String stepsJsonForStepsDetail;
+    String ingredientsJsonForDetail;
+    FragmentManager fragmentManager;
+    RecipeFragment recipeFragment;
+    Boolean FLAG_IS_TWO_PANE;
+    int index;
+    String recipeTitle;
+    TextView titleView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recipe);
-        String ingredientsJson = getIntent().getStringExtra(TAG_INGREDIENTS_DATA);
-        String stepsJson = getIntent().getStringExtra(TAG_STEPS_DATA);
-        Ingredients ingredients = getIngredientsFromJson(ingredientsJson);
-        Steps steps = getStepsFromJson(stepsJson);
-        stepsJsonForStepsDetail = stepsJson;
-        RecipeFragment recipeFragment = new RecipeFragment();
-        recipeFragment.setIngredients(ingredients,steps);
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().add(R.id.fragment_view,recipeFragment).commit();
+        titleView = findViewById(R.id.recipe_title);
+        if(findViewById(R.id.small_screen_step_detail_fragment) != null){
+            FLAG_IS_TWO_PANE = true;
+            String ingredientsJson;
+            String stepsJson;
+            if (savedInstanceState == null) {
+                ingredientsJson = getIntent().getStringExtra(TAG_INGREDIENTS_DATA);
+                stepsJson = getIntent().getStringExtra(TAG_STEPS_DATA);
+
+            } else {
+                ingredientsJson = savedInstanceState.getString(TAG_INGREDIENTS_DATA);
+                stepsJson = savedInstanceState.getString(TAG_STEPS_DATA);
+            }
+
+            Ingredients ingredients = getIngredientsFromJson(ingredientsJson);
+            Steps steps = getStepsFromJson(stepsJson);
+            ingredientsJsonForDetail = ingredientsJson;
+            stepsJsonForStepsDetail = stepsJson;
+            recipeFragment = new RecipeFragment();
+            recipeFragment.setIngredients(ingredientsJson, stepsJson);
+            fragmentManager = getSupportFragmentManager();
+            fragmentManager.beginTransaction().replace(R.id.small_screen_Steps_list_fragment, recipeFragment).commit();
+
+
+            if(savedInstanceState!=null){
+                index = savedInstanceState.getInt(StepsActivity.INDEX_STATE);
+            }else {
+                Intent intent = getIntent();
+               // stepsJson = intent.getStringExtra(STEPS_EXTRA);
+                index = intent.getIntExtra(StepsActivity.STEP_INDEX_EXTRA, 0);
+            }
+
+            steps = getStepsFromJson(stepsJson);
+            StepFragment stepFragment;
+            FragmentManager fragmentManager = getSupportFragmentManager();
+
+            if(savedInstanceState == null){
+                stepFragment = new StepFragment();
+                stepFragment.setStepsAndIndex(stepsJson,index);
+                fragmentManager.beginTransaction().replace(R.id.small_screen_step_detail_fragment,stepFragment, StepsActivity.FRAGMENT_TAG_STRING).commit();
+            }else {
+                stepFragment =(StepFragment) getSupportFragmentManager().findFragmentByTag(StepsActivity.FRAGMENT_TAG_STRING);
+            }
+        }else {
+            FLAG_IS_TWO_PANE = false;
+            String ingredientsJson;
+            String stepsJson;
+            if (savedInstanceState == null) {
+                ingredientsJson = getIntent().getStringExtra(TAG_INGREDIENTS_DATA);
+                stepsJson = getIntent().getStringExtra(TAG_STEPS_DATA);
+                recipeTitle = getIntent().getStringExtra(RECIPE_TITLE);
+            } else {
+                ingredientsJson = savedInstanceState.getString(TAG_INGREDIENTS_DATA);
+                stepsJson = savedInstanceState.getString(TAG_STEPS_DATA);
+                recipeTitle = savedInstanceState.getString(RECIPE_TITLE);
+                recipeTitle = savedInstanceState.getString(RECIPE_TITLE);
+            }
+            titleView.setText(recipeTitle);
+            Ingredients ingredients = getIngredientsFromJson(ingredientsJson);
+            Steps steps = getStepsFromJson(stepsJson);
+            ingredientsJsonForDetail = ingredientsJson;
+            stepsJsonForStepsDetail = stepsJson;
+            recipeFragment = new RecipeFragment();
+            recipeFragment.setIngredients(ingredientsJson, stepsJson);
+            fragmentManager = getSupportFragmentManager();
+            fragmentManager.beginTransaction().replace(R.id.fragment_view, recipeFragment).commit();
+
+
+        }
 
 
     }
@@ -83,10 +154,33 @@ public class RecipeActivity extends AppCompatActivity implements RecipeFragment.
 
     @Override
     public void onListItemClick(int listItemIndex) {
-        Intent intent = new Intent(RecipeActivity.this,StepsActivity.class);
-        intent.putExtra(StepsActivity.STEPS_EXTRA,stepsJsonForStepsDetail);
-        intent.putExtra(StepsActivity.STEP_INDEX_EXTRA,listItemIndex);
-        startActivity(intent);
+        if(FLAG_IS_TWO_PANE){
+            StepFragment stepFragment;
+            FragmentManager fragmentManager = getSupportFragmentManager();
 
+
+                stepFragment = new StepFragment();
+                stepFragment.setStepsAndIndex(stepsJsonForStepsDetail,index);
+                fragmentManager.beginTransaction().replace(R.id.small_screen_step_detail_fragment,stepFragment, StepsActivity.FRAGMENT_TAG_STRING).commit();
+
+        }else {
+            Intent intent = new Intent(RecipeActivity.this, StepsActivity.class);
+            intent.putExtra(StepsActivity.STEPS_EXTRA, stepsJsonForStepsDetail);
+            intent.putExtra(StepsActivity.STEP_INDEX_EXTRA, listItemIndex);
+            startActivity(intent);
+        }
+
+    }
+
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(TAG_INGREDIENTS_DATA,ingredientsJsonForDetail);
+        outState.putString(TAG_STEPS_DATA,stepsJsonForStepsDetail);
+        outState.putString(RECIPE_TITLE,recipeTitle);
+        if(FLAG_IS_TWO_PANE){
+            outState.putInt(StepsActivity.INDEX_STATE,index);
+        }
     }
 }

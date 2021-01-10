@@ -18,12 +18,21 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class RecipeFragment extends Fragment implements StepsListAdapter.ListItemClickListener{
+     String ingredientsJson;
+     String  stepsJson;
      Ingredients ingredients;
      Steps steps;
      private ListItemClickListener mClickListener;
+    final static String TAG_INGREDIENTS_DATA = "ingredients-data";
+    final static String TAG_STEPS_DATA = "steps-data";
 
 
     public interface ListItemClickListener{
@@ -55,9 +64,9 @@ public class RecipeFragment extends Fragment implements StepsListAdapter.ListIte
 
 
 
-    public void setIngredients(Ingredients ingredients,Steps steps) {
-        this.ingredients = ingredients;
-        this.steps = steps;
+    public void setIngredients(String ingredients,String steps) {
+        this.ingredientsJson = ingredients;
+        this.stepsJson = steps;
     }
 
     // Mandatory empty constructor
@@ -70,6 +79,14 @@ public class RecipeFragment extends Fragment implements StepsListAdapter.ListIte
                              Bundle savedInstanceState) {
 
         final View rootView = inflater.inflate(R.layout.recipe_detail, container, false);
+        if(savedInstanceState != null) {
+            if (ingredientsJson == null && stepsJson == null) {
+                ingredientsJson = savedInstanceState.getString(TAG_INGREDIENTS_DATA) ;
+                stepsJson = savedInstanceState.getString(TAG_STEPS_DATA);
+            }
+        }
+        ingredients = getIngredientsFromJson(ingredientsJson);
+        steps = getStepsFromJson(stepsJson);
 
         // Get a reference to the GridView in the fragment_master_list xml layout file
         RecyclerView ingredientsListView = rootView.findViewById(R.id.ingredients_recycler_view);
@@ -86,5 +103,56 @@ public class RecipeFragment extends Fragment implements StepsListAdapter.ListIte
         return rootView;
     }
 
+    Ingredients getIngredientsFromJson(String json){
+        try {
+            List<Double> quantity = new ArrayList<>();
+            List<String> measure = new ArrayList<>();
+            List<String> ingredient = new ArrayList<>();
+            JSONArray ingredients = new JSONArray(json);
+            for(int i=0;i<ingredients.length();i++){
+                JSONObject obj = ingredients.getJSONObject(i);
+                quantity.add(obj.getDouble("quantity"));
+                measure.add(obj.getString("measure"));
+                ingredient.add(obj.getString("ingredient"));
 
+            }
+            Ingredients ingredients1 = new Ingredients(quantity,measure,ingredient);
+            return ingredients1;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
+    Steps getStepsFromJson(String json){
+        try {
+            List<Integer> ids = new ArrayList<>();
+            List<String> shortDescriptions = new ArrayList<>();
+            List<String> descriptions = new ArrayList<>();
+            List<String> urls = new ArrayList<>();
+            JSONArray stepsArray = new JSONArray(json);
+            for(int i=0;i<stepsArray.length();i++){
+                JSONObject obj = stepsArray.getJSONObject(i);
+                ids.add(obj.getInt("id"));
+                shortDescriptions.add(obj.getString("shortDescription"));
+                descriptions.add(obj.getString("description"));
+                urls.add(obj.getString("videoURL"));
+
+            }
+            Steps steps = new Steps(ids,shortDescriptions,descriptions,urls);
+            return steps;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(TAG_INGREDIENTS_DATA,ingredientsJson);
+        outState.putString(TAG_STEPS_DATA,stepsJson);
+    }
 }

@@ -1,5 +1,6 @@
 package com.prince.bakeryapp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 
@@ -19,25 +20,41 @@ import java.util.List;
 public class StepsActivity extends AppCompatActivity {
     static final String STEP_INDEX_EXTRA = "step-index";
     static final String STEPS_EXTRA = "steps-json";
+    static final String FRAGMENT_TAG_STRING = "fragment-tag";
     String stepsJson;
     int index;
     Steps steps;
     TextView indexNumber;
+    public static String STEPS_JSON_STATE ="steps-json";
+    public static String INDEX_STATE = "index";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_steps);
-        Intent intent = getIntent();
         indexNumber = findViewById(R.id.index_number);
-         stepsJson = intent.getStringExtra(STEPS_EXTRA);
-         index = intent.getIntExtra(STEP_INDEX_EXTRA,0);
-         steps = getStepsFromJson(stepsJson);
-        StepFragment stepFragment = new StepFragment();
-        stepFragment.setStepsAndIndex(steps,index);
+        if(savedInstanceState!=null){
+            stepsJson = savedInstanceState.getString(STEPS_JSON_STATE);
+            index = savedInstanceState.getInt(INDEX_STATE);
+        }else {
+            Intent intent = getIntent();
+            stepsJson = intent.getStringExtra(STEPS_EXTRA);
+            index = intent.getIntExtra(STEP_INDEX_EXTRA, 0);
+        }
         indexNumber.setText(String.valueOf(index+1));
+         steps = getStepsFromJson(stepsJson);
+        StepFragment stepFragment;
         FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().add(R.id.step_detail_fragment_view,stepFragment).commit();
+
+             if(savedInstanceState == null){
+                 stepFragment = new StepFragment();
+                 stepFragment.setStepsAndIndex(stepsJson,index);
+                 fragmentManager.beginTransaction().replace(R.id.step_detail_fragment_view,stepFragment, FRAGMENT_TAG_STRING).commit();
+             }else {
+                 stepFragment =(StepFragment) getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG_STRING);
+             }
+
+
     }
     Steps getStepsFromJson(String json){
         try {
@@ -62,10 +79,19 @@ public class StepsActivity extends AppCompatActivity {
         }
 
     }
+
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STEPS_JSON_STATE,stepsJson);
+        outState.putInt(INDEX_STATE,index);
+    }
+
     public void nextStep(View view){
         if(index+1<steps.getDescriptions().size()){
             StepFragment stepFragment = new StepFragment();
-        stepFragment.setStepsAndIndex(steps,++index);
+        stepFragment.setStepsAndIndex(stepsJson,++index);
         indexNumber.setText(String.valueOf(index+1));
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.step_detail_fragment_view,stepFragment).commit();}
@@ -76,7 +102,7 @@ public class StepsActivity extends AppCompatActivity {
     public void prevStep(View view){
         if(index>0) {
             StepFragment stepFragment = new StepFragment();
-            stepFragment.setStepsAndIndex(steps, --index);
+            stepFragment.setStepsAndIndex(stepsJson, --index);
             indexNumber.setText(String.valueOf(index+1));
             FragmentManager fragmentManager = getSupportFragmentManager();
             fragmentManager.beginTransaction().replace(R.id.step_detail_fragment_view, stepFragment).commit();

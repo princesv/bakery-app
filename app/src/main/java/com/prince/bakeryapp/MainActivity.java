@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity implements RecepieListAdapte
     List<String> ingredients = new ArrayList<>();
     List<String> steps = new ArrayList<>();
     List<Integer> servings = new ArrayList<>();
-    private static final String url = "https://d17h27t6h515a5.cloudfront.net/topher/2017/May/59121517_baking/baking.json";
+    static final String url = "https://d17h27t6h515a5.cloudfront.net/topher/2017/May/59121517_baking/baking.json";
 
 
     @Override
@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements RecepieListAdapte
         Intent intent = new Intent(MainActivity.this, RecipeActivity.class);
         intent.putExtra(RecipeActivity.TAG_INGREDIENTS_DATA,ingredients.get(listItemIndex));
         intent.putExtra(RecipeActivity.TAG_STEPS_DATA,steps.get(listItemIndex));
+        intent.putExtra(RecipeActivity.RECIPE_TITLE,names.get(listItemIndex));
         startActivity(intent);
         Toast.makeText(this, String.valueOf(listItemIndex), Toast.LENGTH_SHORT).show();
     }
