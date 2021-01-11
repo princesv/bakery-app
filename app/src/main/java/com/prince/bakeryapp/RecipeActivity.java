@@ -26,7 +26,7 @@ public class RecipeActivity extends AppCompatActivity implements RecipeFragment.
     FragmentManager fragmentManager;
     RecipeFragment recipeFragment;
     Boolean FLAG_IS_TWO_PANE;
-    int index;
+    int index = 0;
     String recipeTitle;
     TextView titleView;
 
@@ -160,7 +160,7 @@ public class RecipeActivity extends AppCompatActivity implements RecipeFragment.
 
 
                 stepFragment = new StepFragment();
-                stepFragment.setStepsAndIndex(stepsJsonForStepsDetail,index);
+                stepFragment.setStepsAndIndex(stepsJsonForStepsDetail,listItemIndex);
                 fragmentManager.beginTransaction().replace(R.id.small_screen_step_detail_fragment,stepFragment, StepsActivity.FRAGMENT_TAG_STRING).commit();
 
         }else {

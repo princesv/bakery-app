@@ -120,6 +120,7 @@ public class ListWidgetService extends RemoteViewsService {
             Intent intent = new Intent();
             intent.putExtra(RecipeActivity.TAG_STEPS_DATA,steps.get(position));
             intent.putExtra(RecipeActivity.TAG_INGREDIENTS_DATA,ingredients.get(position));
+            intent.putExtra(RecipeActivity.RECIPE_TITLE, names.get(position));
             views.setOnClickFillInIntent(R.id.widget_recepie_view,intent);
             return views;
         }
