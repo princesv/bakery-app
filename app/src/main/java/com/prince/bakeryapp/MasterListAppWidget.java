@@ -20,9 +20,6 @@ public class MasterListAppWidget extends AppWidgetProvider {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.master_list_app_widget);
         Intent intent = new Intent(context,ListWidgetService.class);
         views.setRemoteAdapter(R.id.widget_list_view,intent);
-        Intent detailActivityIntent = new Intent(context, RecipeActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0 , detailActivityIntent , PendingIntent.FLAG_UPDATE_CURRENT);
-        views.setPendingIntentTemplate(R.id.widget_list_view,pendingIntent);
         views.setEmptyView(R.id.widget_list_view,R.id.empty_list_message);
 
         // Instruct the widget manager to update the widget

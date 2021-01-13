@@ -2,6 +2,7 @@ package com.prince.bakeryapp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 
@@ -24,15 +25,14 @@ public class ListWidgetService extends RemoteViewsService {
         return new WidgetListViewAdapter(this.getApplicationContext());
     }
 
-    public static class WidgetListViewAdapter implements RemoteViewsFactory {
+    public class WidgetListViewAdapter implements RemoteViewsFactory {
 
         String gSearchResult;
         Context mContext;
-        List<Integer> ids = new ArrayList<>();
-        List<String> names = new ArrayList<>();
-        List<String> ingredients = new ArrayList<>();
-        List<String> steps = new ArrayList<>();
-        List<Integer> servings = new ArrayList<>();
+        List<Double> quantity = new ArrayList<>();
+        List<String> measure = new ArrayList<>();
+        List<String> ingredient = new ArrayList<>();
+
 
         public WidgetListViewAdapter(Context context) {
             mContext = context;
@@ -45,60 +45,37 @@ public class ListWidgetService extends RemoteViewsService {
 
         @Override
         public void onDataSetChanged() {
-            try {
-                gSearchResult = getResponseFromHttpUrl(getUrlFromString(MainActivity.url));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if(gSearchResult != null){
-                JSONArray recipeList = null;
-                    try {
-                        recipeList = new JSONArray(gSearchResult);
-                        int size = recipeList.length();
-                        for(int i=0;i<size;i++){
-                            JSONObject obj = recipeList.getJSONObject(i);
-                            ids.add(obj.getInt("id"));
-                            names.add(obj.getString("name"));
-                            ingredients.add( obj.getJSONArray("ingredients").toString());
-                            steps.add(obj.getJSONArray("steps").toString());
-                            servings.add(obj.getInt("servings"));
-
-
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-            }
-
+            SharedPreferences sharedpreferences =
+                    getSharedPreferences(RecipeActivity.SHARED_PREF, MODE_PRIVATE);
+            String jsonRecipe = sharedpreferences.getString(RecipeActivity.TAG_INGREDIENTS_DATA, "");
+            Ingredients ingredientsObject = getIngredientsFromJson(jsonRecipe);
+            quantity = ingredientsObject.getQuantity();
+            measure = ingredientsObject.getMeasure();
+            ingredient = ingredientsObject.getIngredient();
         }
-        URL getUrlFromString(String stringUrl){
+
+        Ingredients getIngredientsFromJson(String json){
             try {
-                URL urlToFetchData = new URL(stringUrl);
-                return urlToFetchData;
-            } catch (MalformedURLException e) {
+                List<Double> quantity = new ArrayList<>();
+                List<String> measure = new ArrayList<>();
+                List<String> ingredient = new ArrayList<>();
+                JSONArray ingredients = new JSONArray(json);
+                for(int i=0;i<ingredients.length();i++){
+                    JSONObject obj = ingredients.getJSONObject(i);
+                    quantity.add(obj.getDouble("quantity"));
+                    measure.add(obj.getString("measure"));
+                    ingredient.add(obj.getString("ingredient"));
+
+                }
+                Ingredients ingredients1 = new Ingredients(quantity,measure,ingredient);
+                return ingredients1;
+            } catch (JSONException e) {
                 e.printStackTrace();
                 return null;
             }
+
         }
 
-        public static String getResponseFromHttpUrl(URL url) throws IOException {
-            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-            try {
-                InputStream in = urlConnection.getInputStream();
-
-                Scanner scanner = new Scanner(in);
-                scanner.useDelimiter("\\A");
-
-                boolean hasInput = scanner.hasNext();
-                if (hasInput) {
-                    return scanner.next();
-                } else {
-                    return null;
-                }
-            } finally {
-                urlConnection.disconnect();
-            }
-        }
 
 
 
@@ -109,19 +86,15 @@ public class ListWidgetService extends RemoteViewsService {
 
         @Override
         public int getCount() {
-            return ids.size();
+            return ingredient.size();
         }
 
         @Override
         public RemoteViews getViewAt(int position) {
             RemoteViews views = new RemoteViews(mContext.getPackageName(),R.layout.widget_recipe_plate);
-            views.setTextViewText(R.id.widget_recepie_view,names.get(position));
-            views.setTextViewText(R.id.widget_servings_view,String.valueOf(servings.get(position)));
-            Intent intent = new Intent();
-            intent.putExtra(RecipeActivity.TAG_STEPS_DATA,steps.get(position));
-            intent.putExtra(RecipeActivity.TAG_INGREDIENTS_DATA,ingredients.get(position));
-            intent.putExtra(RecipeActivity.RECIPE_TITLE, names.get(position));
-            views.setOnClickFillInIntent(R.id.widget_recepie_view,intent);
+            views.setTextViewText(R.id.widget_ingredient_Title,ingredient.get(position));
+            views.setTextViewText(R.id.widget_ingredient_measure,measure.get(position));
+            views.setTextViewText(R.id.widget_ingredient_quantity, String.valueOf(quantity.get(position)));
             return views;
         }
 

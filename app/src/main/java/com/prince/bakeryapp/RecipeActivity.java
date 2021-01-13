@@ -4,8 +4,12 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,6 +25,7 @@ public class RecipeActivity extends AppCompatActivity implements RecipeFragment.
     final static String TAG_INGREDIENTS_DATA = "ingredients-data";
     final static String TAG_STEPS_DATA = "steps-data";
     final static String RECIPE_TITLE = "recipe-title";
+    final static String SHARED_PREF = "shared-pref";
     String stepsJsonForStepsDetail;
     String ingredientsJsonForDetail;
     FragmentManager fragmentManager;
@@ -183,4 +188,24 @@ public class RecipeActivity extends AppCompatActivity implements RecipeFragment.
             outState.putInt(StepsActivity.INDEX_STATE,index);
         }
     }
+
+    public void addToFavourite(View view){
+        SharedPreferences.Editor editor = getSharedPreferences(SHARED_PREF, MODE_PRIVATE).edit();
+        editor.putString(TAG_INGREDIENTS_DATA, ingredientsJsonForDetail);
+        editor.apply();
+       /* Intent intent = new Intent(this, MasterListAppWidget.class);
+        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+        int[] ids = AppWidgetManager.getInstance(getApplication()).getAppWidgetIds(new ComponentName(getApplication(),MasterListAppWidget.class));
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids);
+
+        */
+
+       AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(this);
+       int[] ids = appWidgetManager.getAppWidgetIds(new ComponentName(getApplication(),MasterListAppWidget.class));
+       appWidgetManager.notifyAppWidgetViewDataChanged(ids,R.id.widget_list_view);
+
+
+        Toast.makeText(this, "Favourite recipe updated successfully", Toast.LENGTH_SHORT).show();
+    }
+
 }

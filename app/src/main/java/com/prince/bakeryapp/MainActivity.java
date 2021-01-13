@@ -1,9 +1,13 @@
 package com.prince.bakeryapp;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.test.espresso.IdlingResource;
 
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -26,8 +30,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+
+
 public class MainActivity extends AppCompatActivity implements RecepieListAdapter.ListItemClickListener {
-    RecyclerView recipeCardList;
+
+    private RecyclerView recipeCardList;
     TextView tvErrorMessage;
     ProgressBar progressBar;
     String gSearchResult;
@@ -38,6 +45,19 @@ public class MainActivity extends AppCompatActivity implements RecepieListAdapte
     List<Integer> servings = new ArrayList<>();
     static final String url = "https://d17h27t6h515a5.cloudfront.net/topher/2017/May/59121517_baking/baking.json";
 
+    @Nullable
+    private SimpleIdlingResource mIdlingResource;
+
+
+    @VisibleForTesting
+    @NonNull
+    public IdlingResource getIdlingResource() {
+        if (mIdlingResource == null) {
+            mIdlingResource = new SimpleIdlingResource();
+        }
+        return mIdlingResource;
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements RecepieListAdapte
         recipeCardList = findViewById(R.id.recipe_grid_recycler_view);
         tvErrorMessage = findViewById(R.id.errorMessage);
         progressBar = findViewById(R.id.progressBar);
+        getIdlingResource();
         new FetchDataFronInternet().execute(url);
     }
 
@@ -62,6 +83,9 @@ public class MainActivity extends AppCompatActivity implements RecepieListAdapte
     public class FetchDataFronInternet extends AsyncTask<String,Void,String> {
         @Override
         protected void onPreExecute() {
+            if (mIdlingResource != null) {
+                mIdlingResource.setIdleState(false);
+            }
             progressBar.setVisibility(View.VISIBLE);
             tvErrorMessage.setVisibility(View.INVISIBLE);
             recipeCardList.setVisibility(View.INVISIBLE);
@@ -95,6 +119,9 @@ public class MainActivity extends AppCompatActivity implements RecepieListAdapte
                 inflateMainActivity(recipeList);
             }else{
                 displayErrorMessage();
+            }
+            if (mIdlingResource != null) {
+                mIdlingResource.setIdleState(true);
             }
         }
     }
