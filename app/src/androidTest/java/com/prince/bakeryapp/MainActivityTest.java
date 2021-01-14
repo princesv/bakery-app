@@ -1,5 +1,6 @@
 package com.prince.bakeryapp;
 
+import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.rule.ActivityTestRule;
 
@@ -15,6 +16,7 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static org.hamcrest.Matchers.anything;
+import static org.hamcrest.Matchers.instanceOf;
 
 import androidx.test.espresso.Espresso;
 
@@ -32,7 +34,8 @@ public class MainActivityTest {
     @Before
     public void registerIdlingResource(){
         mIdlingResource = mActivityTestRule.getActivity().getIdlingResource();
-        Espresso.registerIdlingResources(mIdlingResource);
+      //  Espresso.registerIdlingResources(mIdlingResource);
+        IdlingRegistry.getInstance().register(mIdlingResource);
     }
 
 
@@ -43,11 +46,13 @@ public class MainActivityTest {
         onData(anything()).inAdapterView(withId(R.id.recipe_grid_recycler_view)).atPosition(1).perform(click());
 
 
+
     }
     @After
     public void unregisterIdlingResource(){
         if(mIdlingResource != null){
-            Espresso.unregisterIdlingResources(mIdlingResource);
+           // Espresso.unregisterIdlingResources(mIdlingResource);
+            IdlingRegistry.getInstance().unregister(mIdlingResource);
         }
     }
 }

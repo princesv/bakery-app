@@ -13,6 +13,9 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Adapter;
+import android.widget.AdapterView;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,12 +35,12 @@ import java.util.Scanner;
 
 
 
-public class MainActivity extends AppCompatActivity implements RecepieListAdapter.ListItemClickListener {
+public class MainActivity extends AppCompatActivity implements DownloadData.DelayerCallback {
 
-    private RecyclerView recipeCardList;
+
+    ListView mainRecipeList;
     TextView tvErrorMessage;
     ProgressBar progressBar;
-    String gSearchResult;
     List<Integer> ids = new ArrayList<>();
     List<String> names = new ArrayList<>();
     List<String> ingredients = new ArrayList<>();
@@ -63,68 +66,29 @@ public class MainActivity extends AppCompatActivity implements RecepieListAdapte
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        recipeCardList = findViewById(R.id.recipe_grid_recycler_view);
+       // recipeCardList = findViewById(R.id.recipe_grid_recycler_view);
+        mainRecipeList = findViewById(R.id.recipe_grid_recycler_view);
         tvErrorMessage = findViewById(R.id.errorMessage);
         progressBar = findViewById(R.id.progressBar);
         getIdlingResource();
-        new FetchDataFronInternet().execute(url);
+        initialiseViews();
+        DownloadData.downloadData(this, this, mIdlingResource);
     }
 
     @Override
-    public void onListItemClick(int listItemIndex) {
-        Intent intent = new Intent(MainActivity.this, RecipeActivity.class);
-        intent.putExtra(RecipeActivity.TAG_INGREDIENTS_DATA,ingredients.get(listItemIndex));
-        intent.putExtra(RecipeActivity.TAG_STEPS_DATA,steps.get(listItemIndex));
-        intent.putExtra(RecipeActivity.RECIPE_TITLE,names.get(listItemIndex));
-        startActivity(intent);
-        Toast.makeText(this, String.valueOf(listItemIndex), Toast.LENGTH_SHORT).show();
+    protected void onStart() {
+        super.onStart();
     }
 
-    public class FetchDataFronInternet extends AsyncTask<String,Void,String> {
-        @Override
-        protected void onPreExecute() {
-            if (mIdlingResource != null) {
-                mIdlingResource.setIdleState(false);
-            }
-            progressBar.setVisibility(View.VISIBLE);
-            tvErrorMessage.setVisibility(View.INVISIBLE);
-            recipeCardList.setVisibility(View.INVISIBLE);
-            super.onPreExecute();
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            String stringUrl = strings[0];
-            URL urlToFetchData = getUrlFromString(stringUrl);
-            String searchResult = null;
-            try {
-                searchResult = getResponseFromHttpUrl(urlToFetchData);
-                gSearchResult = searchResult;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            return searchResult;
-
-
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            progressBar.setVisibility(View.INVISIBLE);
-            super.onPostExecute(s);
-            if(s!=null) {
-                displayRecyclerView();
-                RecipeList recipeList = getListDataForMainActivity(s);
-                inflateMainActivity(recipeList);
-            }else{
-                displayErrorMessage();
-            }
-            if (mIdlingResource != null) {
-                mIdlingResource.setIdleState(true);
-            }
-        }
+    void initialiseViews(){
+        progressBar.setVisibility(View.VISIBLE);
+        tvErrorMessage.setVisibility(View.INVISIBLE);
+        mainRecipeList.setVisibility(View.INVISIBLE);
     }
+
+
+
+
 
     RecipeList getListDataForMainActivity(String s){
         JSONArray recipeList = null;
@@ -154,11 +118,11 @@ public class MainActivity extends AppCompatActivity implements RecepieListAdapte
 
 
     void displayErrorMessage(){
-        recipeCardList.setVisibility(View.INVISIBLE);
+        mainRecipeList.setVisibility(View.INVISIBLE);
         tvErrorMessage.setVisibility(View.VISIBLE);
     }
-    void displayRecyclerView(){
-        recipeCardList.setVisibility(View.VISIBLE);
+    void displayListView(){
+        mainRecipeList.setVisibility(View.VISIBLE);
         tvErrorMessage.setVisibility(View.INVISIBLE);
     }
 
@@ -191,12 +155,39 @@ public class MainActivity extends AppCompatActivity implements RecepieListAdapte
         }
     }
     void inflateMainActivity(RecipeList paramitersToInflateMoviesList){
-        RecepieListAdapter recepieListAdapter = new RecepieListAdapter(this,paramitersToInflateMoviesList,this);
+      //  RecepieListAdapter recepieListAdapter = new RecepieListAdapter(this,paramitersToInflateMoviesList,this);
        // GridLayoutManager layoutManager = new GridLayoutManager(this,2);
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+       // LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
 
-        recipeCardList.setLayoutManager(linearLayoutManager);
-        recipeCardList.setHasFixedSize(true);
-        recipeCardList.setAdapter(recepieListAdapter);
+       // recipeCardList.setLayoutManager(linearLayoutManager);
+       // recipeCardList.setHasFixedSize(true);
+       // recipeCardList.setAdapter(recepieListAdapter);
+        ListViewAdapter adapter = new ListViewAdapter(this, paramitersToInflateMoviesList);
+        mainRecipeList.setAdapter(adapter);
+        mainRecipeList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(MainActivity.this, RecipeActivity.class);
+                intent.putExtra(RecipeActivity.TAG_INGREDIENTS_DATA,ingredients.get(position));
+                intent.putExtra(RecipeActivity.TAG_STEPS_DATA,steps.get(position));
+                intent.putExtra(RecipeActivity.RECIPE_TITLE,names.get(position));
+                startActivity(intent);
+            }
+        });
+    }
+
+    @Override
+    public void onDone(String searchResult) {
+        progressBar.setVisibility(View.INVISIBLE);
+        if(searchResult!=null) {
+            displayListView();
+            RecipeList recipeList = getListDataForMainActivity(searchResult);
+            inflateMainActivity(recipeList);
+        }else{
+            displayErrorMessage();
+        }
+        if (mIdlingResource != null) {
+            mIdlingResource.setIdleState(true);
+        }
     }
 }
